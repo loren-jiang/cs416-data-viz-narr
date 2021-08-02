@@ -304,7 +304,6 @@
 
     const annoScenes = annoDates.map((d) => findSceneFromDate(d));
 
-    // console.log(annoScenes);
 
     // const annoScenes = [0, 0, 0, 1, 1, 2, 2, 3];
 
@@ -411,7 +410,6 @@
         const i = d3.interpolate(this._current, d);
         return function (t) {
             this._current = i(t);
-            console.log(i(t));
             return (
             "Total Cases: " +
             Math.round(i(t))
