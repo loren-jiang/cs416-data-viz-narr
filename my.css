@@ -1,0 +1,58 @@
+.container {
+  text-align: center;
+  font-family: "Georgia";
+}
+
+.y-axis-total-doses {
+  color: #7f85b0;
+}
+
+.total-doses-label {
+  fill: #7f85b0;
+}
+
+.axisLabel {
+  font-weight: 800;
+}
+
+.line {
+  stroke: black;
+  stroke-width: 2;
+  fill: none;
+}
+
+.total-doses {
+  stroke: #b8c2ff;
+  stroke-width: 2;
+  fill: none;
+}
+
+.grid line {
+  stroke: lightgrey;
+  stroke-opacity: 0.7;
+  shape-rendering: crispEdges;
+}
+
+.anno {
+  opacity: 0;
+  font-size: 12px;
+}
+
+.btn {
+  font-family: "Georgia";
+  border-radius: 3px;
+  font-weight: 600;
+  margin: 4px;
+  cursor: pointer;
+}
+
+.legend {
+}
+
+.btn:hover {
+  opacity: 0.8;
+}
+
+.btn.selected {
+  background: lightblue;
+}

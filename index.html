@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta name="description" content="Webpage description goes here" />
+  <meta charset="utf-8">
+  <title>COVID Visualization Narrative</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-transition/3.0.0/d3-transition.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-scale/3.3.0/d3-scale.min.js"></script>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-axis/2.1.0/d3-axis.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-annotation/2.5.1/d3-annotation.min.js"></script>
+</head>
+
+<body>
+  
+<div class="container">
+  <h1> COVID-19 Cases in US </h1>
+  <h5 class="legend">
+    <strong style="font-weight: 1000">—</strong> <span>7-day Average</span>,
+    <strong style="font-weight: 1000; color: #B8C2FF">—</strong> <span style="color: #7F85B0">Total Vaccine Doses Administered</span>
+  </h5>
+  <div id="chart"></div>
+  <div id="controls">
+  </div>
+</div>
+
+<script>
+    // Gather and consolidate data
+
+    // see https://covid.cdc.gov/covid-data-tracker/#trends_dailytrendscases
+    var allData = d3.tsvParse(
+    "State\tDate\tNew Cases\t7-Day Moving Avg\tTotal Doses Administered\tHistoric Cases\nUnited States\t1/22/2020\t33\t4\tnull\t0\nUnited States\t1/23/2020\t2\t5\tnull\t0\nUnited States\t1/24/2020\t1\t5\tnull\t0\nUnited States\t1/25/2020\t3\t5\tnull\t0\nUnited States\t1/26/2020\t3\t6\tnull\t0\nUnited States\t1/27/2020\t1\t6\tnull\t0\nUnited States\t1/28/2020\t1\t6\tnull\t0\nUnited States\t1/29/2020\t1\t1\tnull\t0\nUnited States\t1/30/2020\t2\t1\tnull\t0\nUnited States\t1/31/2020\t4\t2\tnull\t0\nUnited States\t2/1/2020\t4\t2\tnull\t0\nUnited States\t2/2/2020\t0\t1\tnull\t464\nUnited States\t2/3/2020\t31\t5\tnull\t0\nUnited States\t2/4/2020\t9\t7\tnull\t0\nUnited States\t2/5/2020\t5\t7\tnull\t0\nUnited States\t2/6/2020\t1\t7\tnull\t0\nUnited States\t2/7/2020\t5\t7\tnull\t0\nUnited States\t2/8/2020\t7\t8\tnull\t0\nUnited States\t2/9/2020\t35\t13\tnull\t0\nUnited States\t2/10/2020\t8\t10\tnull\t0\nUnited States\t2/11/2020\t8\t9\tnull\t0\nUnited States\t2/12/2020\t10\t10\tnull\t0\nUnited States\t2/13/2020\t5\t11\tnull\t0\nUnited States\t2/14/2020\t7\t11\tnull\t0\nUnited States\t2/15/2020\t5\t11\tnull\t0\nUnited States\t2/16/2020\t10\t7\tnull\t0\nUnited States\t2/17/2020\t18\t9\tnull\t0\nUnited States\t2/18/2020\t7\t8\tnull\t0\nUnited States\t2/19/2020\t16\t9\tnull\t0\nUnited States\t2/20/2020\t12\t10\tnull\t0\nUnited States\t2/21/2020\t18\t12\tnull\t0\nUnited States\t2/22/2020\t26\t15\tnull\t0\nUnited States\t2/23/2020\t22\t17\tnull\t0\nUnited States\t2/24/2020\t19\t17\tnull\t0\nUnited States\t2/25/2020\t24\t19\tnull\t0\nUnited States\t2/26/2020\t43\t23\tnull\t0\nUnited States\t2/27/2020\t36\t26\tnull\t0\nUnited States\t2/28/2020\t51\t31\tnull\t0\nUnited States\t2/29/2020\t37\t33\tnull\t0\nUnited States\t3/1/2020\t89\t42\tnull\t0\nUnited States\t3/2/2020\t78\t51\tnull\t0\nUnited States\t3/3/2020\t170\t72\tnull\t0\nUnited States\t3/4/2020\t139\t85\tnull\t0\nUnited States\t3/5/2020\t168\t104\tnull\t0\nUnited States\t3/6/2020\t216\t128\tnull\t0\nUnited States\t3/7/2020\t268\t161\tnull\t0\nUnited States\t3/8/2020\t347\t198\tnull\t0\nUnited States\t3/9/2020\t606\t273\tnull\t0\nUnited States\t3/10/2020\t671\t345\tnull\t0\nUnited States\t3/11/2020\t868\t449\tnull\t0\nUnited States\t3/12/2020\t1144\t588\tnull\t0\nUnited States\t3/13/2020\t1325\t747\tnull\t0\nUnited States\t3/14/2020\t1797\t965\tnull\t0\nUnited States\t3/15/2020\t2938\t1335\tnull\t0\nUnited States\t3/16/2020\t2886\t1661\tnull\t0\nUnited States\t3/17/2020\t4019\t2139\tnull\t0\nUnited States\t3/18/2020\t6094\t2886\tnull\t0\nUnited States\t3/19/2020\t7227\t3755\tnull\t0\nUnited States\t3/20/2020\t8266\t4746\tnull\t0\nUnited States\t3/21/2020\t10012\t5920\tnull\t0\nUnited States\t3/22/2020\t11516\t7145\tnull\t0\nUnited States\t3/23/2020\t11535\t8381\tnull\t0\nUnited States\t3/24/2020\t12109\t9537\tnull\t0\nUnited States\t3/25/2020\t14854\t10788\tnull\t0\nUnited States\t3/26/2020\t19322\t12516\tnull\t0\nUnited States\t3/27/2020\t20753\t14300\tnull\t0\nUnited States\t3/28/2020\t20931\t15860\tnull\t0\nUnited States\t3/29/2020\t21402\t17272\tnull\t0\nUnited States\t3/30/2020\t21690\t18723\tnull\t0\nUnited States\t3/31/2020\t23220\t20310\tnull\t0\nUnited States\t4/1/2020\t28661\t22282\tnull\t0\nUnited States\t4/2/2020\t30173\t23832\tnull\t0\nUnited States\t4/3/2020\t31610\t25383\tnull\t0\nUnited States\t4/4/2020\t32611\t27052\tnull\t0\nUnited States\t4/5/2020\t27331\t27899\tnull\t0\nUnited States\t4/6/2020\t28729\t28905\tnull\t0\nUnited States\t4/7/2020\t30258\t29910\tnull\t0\nUnited States\t4/8/2020\t33302\t30573\tnull\t0\nUnited States\t4/9/2020\t35057\t31271\tnull\t0\nUnited States\t4/10/2020\t32002\t31327\tnull\t0\nUnited States\t4/11/2020\t32297\t31282\tnull\t0\nUnited States\t4/12/2020\t27703\t31335\tnull\t0\nUnited States\t4/13/2020\t25383\t30857\tnull\t0\nUnited States\t4/14/2020\t25497\t30177\tnull\t0\nUnited States\t4/15/2020\t25648\t29083\tnull\t0\nUnited States\t4/16/2020\t31349\t28554\tnull\t0\nUnited States\t4/17/2020\t30489\t28338\tnull\t0\nUnited States\t4/18/2020\t27571\t27662\tnull\t0\nUnited States\t4/19/2020\t28023\t27708\tnull\t0\nUnited States\t4/20/2020\t26176\t27821\tnull\t0\nUnited States\t4/21/2020\t25146\t27771\tnull\t0\nUnited States\t4/22/2020\t31133\t28555\tnull\t0\nUnited States\t4/23/2020\t32087\t28660\tnull\t0\nUnited States\t4/24/2020\t33899\t29147\tnull\t0\nUnited States\t4/25/2020\t32984\t29921\tnull\t0\nUnited States\t4/26/2020\t27748\t29881\tnull\t0\nUnited States\t4/27/2020\t24022\t29574\tnull\t0\nUnited States\t4/28/2020\t23731\t29372\tnull\t0\nUnited States\t4/29/2020\t28681\t29021\tnull\t0\nUnited States\t4/30/2020\t32513\t29082\tnull\t0\nUnited States\t5/1/2020\t30286\t28566\tnull\t0\nUnited States\t5/2/2020\t28338\t27902\tnull\t0\nUnited States\t5/3/2020\t27895\t27923\tnull\t0\nUnited States\t5/4/2020\t21508\t27564\tnull\t0\nUnited States\t5/5/2020\t23518\t27534\tnull\t0\nUnited States\t5/6/2020\t24384\t26920\tnull\t0\nUnited States\t5/7/2020\t32324\t26893\tnull\t0\nUnited States\t5/8/2020\t28687\t26664\tnull\t0\nUnited States\t5/9/2020\t26102\t26345\tnull\t0\nUnited States\t5/10/2020\t20565\t25298\tnull\t0\nUnited States\t5/11/2020\t19938\t25074\tnull\t0\nUnited States\t5/12/2020\t24811\t25258\tnull\t0\nUnited States\t5/13/2020\t23274\t25100\tnull\t0\nUnited States\t5/14/2020\t29989\t24766\tnull\t0\nUnited States\t5/15/2020\t27166\t24549\tnull\t0\nUnited States\t5/16/2020\t26749\t24641\tnull\t0\nUnited States\t5/17/2020\t19345\t24467\tnull\t0\nUnited States\t5/18/2020\t25465\t25257\tnull\t0\nUnited States\t5/19/2020\t21491\t24782\tnull\t0\nUnited States\t5/20/2020\t24838\t25006\tnull\t0\nUnited States\t5/21/2020\t27816\t24695\tnull\t0\nUnited States\t5/22/2020\t26573\t24611\tnull\t0\nUnited States\t5/23/2020\t21292\t23831\tnull\t0\nUnited States\t5/24/2020\t21083\t24079\tnull\t0\nUnited States\t5/25/2020\t18520\t23087\tnull\t0\nUnited States\t5/26/2020\t16291\t22344\tnull\t0\nUnited States\t5/27/2020\t21649\t21889\tnull\t0\nUnited States\t5/28/2020\t24013\t21345\tnull\t0\nUnited States\t5/29/2020\t25564\t21201\tnull\t0\nUnited States\t5/30/2020\t24250\t21624\tnull\t0\nUnited States\t5/31/2020\t20376\t21523\tnull\t0\nUnited States\t6/1/2020\t17058\t21314\tnull\t0\nUnited States\t6/2/2020\t20739\t21949\tnull\t0\nUnited States\t6/3/2020\t23054\t22150\tnull\t0\nUnited States\t6/4/2020\t24254\t22185\tnull\t0\nUnited States\t6/5/2020\t25781\t22216\tnull\t0\nUnited States\t6/6/2020\t23697\t22137\tnull\t0\nUnited States\t6/7/2020\t18057\t21805\tnull\t0\nUnited States\t6/8/2020\t17974\t21936\tnull\t0\nUnited States\t6/9/2020\t19463\t21754\tnull\t0\nUnited States\t6/10/2020\t24491\t21959\tnull\t0\nUnited States\t6/11/2020\t24815\t22039\tnull\t0\nUnited States\t6/12/2020\t29290\t22541\tnull\t0\nUnited States\t6/13/2020\t25590\t22811\tnull\t0\nUnited States\t6/14/2020\t21493\t23302\tnull\t0\nUnited States\t6/15/2020\t20395\t23648\tnull\t0\nUnited States\t6/16/2020\t27472\t24792\tnull\t0\nUnited States\t6/17/2020\t29577\t25518\tnull\t0\nUnited States\t6/18/2020\t32617\t26633\tnull\t0\nUnited States\t6/19/2020\t36159\t27614\tnull\t0\nUnited States\t6/20/2020\t36333\t29149\tnull\t0\nUnited States\t6/21/2020\t29914\t30352\tnull\t0\nUnited States\t6/22/2020\t28861\t31561\tnull\t0\nUnited States\t6/23/2020\t37813\t33039\tnull\t0\nUnited States\t6/24/2020\t42013\t34815\tnull\t0\nUnited States\t6/25/2020\t48957\t37150\tnull\t0\nUnited States\t6/26/2020\t52056\t39421\tnull\t0\nUnited States\t6/27/2020\t49632\t41320\tnull\t0\nUnited States\t6/28/2020\t45371\t43529\tnull\t0\nUnited States\t6/29/2020\t38579\t44917\tnull\t0\nUnited States\t6/30/2020\t48038\t46378\tnull\t0\nUnited States\t7/1/2020\t58981\t48802\tnull\t0\nUnited States\t7/2/2020\t60846\t50500\tnull\t0\nUnited States\t7/3/2020\t60904\t51764\tnull\t0\nUnited States\t7/4/2020\t54835\t52507\tnull\t0\nUnited States\t7/5/2020\t45431\t52516\tnull\t0\nUnited States\t7/6/2020\t45646\t53525\tnull\t0\nUnited States\t7/7/2020\t57629\t54896\tnull\t0\nUnited States\t7/8/2020\t69700\t56427\tnull\t0\nUnited States\t7/9/2020\t69132\t57611\tnull\t0\nUnited States\t7/10/2020\t75691\t59723\tnull\t0\nUnited States\t7/11/2020\t66316\t61363\tnull\t0\nUnited States\t7/12/2020\t62913\t63861\tnull\t0\nUnited States\t7/13/2020\t58399\t65682\tnull\t0\nUnited States\t7/14/2020\t65685\t66833\tnull\t0\nUnited States\t7/15/2020\t70323\t66922\tnull\t0\nUnited States\t7/16/2020\t77556\t68126\tnull\t0\nUnited States\t7/17/2020\t79331\t68646\tnull\t0\nUnited States\t7/18/2020\t66432\t68662\tnull\t0\nUnited States\t7/19/2020\t61208\t68419\tnull\t0\nUnited States\t7/20/2020\t60426\t68708\tnull\t0\nUnited States\t7/21/2020\t62569\t68263\tnull\t0\nUnited States\t7/22/2020\t70423\t68277\tnull\t0\nUnited States\t7/23/2020\t70540\t67275\tnull\t0\nUnited States\t7/24/2020\t73259\t66408\tnull\t0\nUnited States\t7/25/2020\t60888\t65616\tnull\t0\nUnited States\t7/26/2020\t54911\t64716\tnull\t0\nUnited States\t7/27/2020\t51388\t63425\tnull\t0\nUnited States\t7/28/2020\t58717\t62875\tnull\t0\nUnited States\t7/29/2020\t66021\t62246\tnull\t0\nUnited States\t7/30/2020\t66661\t61692\tnull\t0\nUnited States\t7/31/2020\t66453\t60719\tnull\t0\nUnited States\t8/1/2020\t57928\t60297\tnull\t0\nUnited States\t8/2/2020\t49432\t59514\tnull\t0\nUnited States\t8/3/2020\t44994\t58600\tnull\t0\nUnited States\t8/4/2020\t53044\t57790\tnull\t0\nUnited States\t8/5/2020\t56876\t56484\tnull\t0\nUnited States\t8/6/2020\t58106\t55261\tnull\t0\nUnited States\t8/7/2020\t58485\t54123\tnull\t0\nUnited States\t8/8/2020\t52521\t53351\tnull\t0\nUnited States\t8/9/2020\t43697\t52531\tnull\t0\nUnited States\t8/10/2020\t39377\t51729\tnull\t0\nUnited States\t8/11/2020\t50613\t51382\tnull\t0\nUnited States\t8/12/2020\t53196\t50856\tnull\t0\nUnited States\t8/13/2020\t52752\t50091\tnull\t0\nUnited States\t8/14/2020\t53325\t49354\tnull\t0\nUnited States\t8/15/2020\t46540\t48500\tnull\t0\nUnited States\t8/16/2020\t38022\t47689\tnull\t0\nUnited States\t8/17/2020\t37622\t47438\tnull\t0\nUnited States\t8/18/2020\t41507\t46137\tnull\t0\nUnited States\t8/19/2020\t46988\t45250\tnull\t0\nUnited States\t8/20/2020\t46756\t44394\tnull\t0\nUnited States\t8/21/2020\t46636\t43438\tnull\t0\nUnited States\t8/22/2020\t41901\t42776\tnull\t0\nUnited States\t8/23/2020\t33869\t42182\tnull\t0\nUnited States\t8/24/2020\t34417\t41724\tnull\t0\nUnited States\t8/25/2020\t40439\t41572\tnull\t0\nUnited States\t8/26/2020\t47329\t41621\tnull\t0\nUnited States\t8/27/2020\t48440\t41861\tnull\t0\nUnited States\t8/28/2020\t45786\t41740\tnull\t0\nUnited States\t8/29/2020\t41278\t41651\tnull\t0\nUnited States\t8/30/2020\t33101\t41541\tnull\t0\nUnited States\t8/31/2020\t31726\t41157\tnull\t0\nUnited States\t9/1/2020\t44530\t41741\tnull\t0\nUnited States\t9/2/2020\t42582\t41063\tnull\t1705\nUnited States\t9/3/2020\t46350\t40764\tnull\t0\nUnited States\t9/4/2020\t49277\t41263\tnull\t0\nUnited States\t9/5/2020\t41071\t41233\tnull\t0\nUnited States\t9/6/2020\t30728\t40894\tnull\t0\nUnited States\t9/7/2020\t23672\t39744\tnull\t0\nUnited States\t9/8/2020\t27375\t37293\tnull\t0\nUnited States\t9/9/2020\t38971\t36777\tnull\t0\nUnited States\t9/10/2020\t40401\t35927\tnull\t0\nUnited States\t9/11/2020\t45177\t35342\tnull\t0\nUnited States\t9/12/2020\t39821\t35163\tnull\t0\nUnited States\t9/13/2020\t30614\t35147\tnull\t0\nUnited States\t9/14/2020\t33091\t36492\tnull\t0\nUnited States\t9/15/2020\t38877\t38136\tnull\t0\nUnited States\t9/16/2020\t45023\t39000\tnull\t0\nUnited States\t9/17/2020\t46644\t39892\tnull\t0\nUnited States\t9/18/2020\t48263\t40333\tnull\t0\nUnited States\t9/19/2020\t42297\t40687\tnull\t0\nUnited States\t9/20/2020\t32420\t40945\tnull\t0\nUnited States\t9/21/2020\t39811\t41905\tnull\t0\nUnited States\t9/22/2020\t51759\t43745\tnull\t0\nUnited States\t9/23/2020\t44555\t43678\tnull\t0\nUnited States\t9/24/2020\t46509\t43659\tnull\t0\nUnited States\t9/25/2020\t50587\t43991\tnull\t0\nUnited States\t9/26/2020\t41992\t43947\tnull\t0\nUnited States\t9/27/2020\t34562\t44253\tnull\t0\nUnited States\t9/28/2020\t37309\t43896\tnull\t0\nUnited States\t9/29/2020\t42367\t42554\tnull\t0\nUnited States\t9/30/2020\t47454\t42968\tnull\t0\nUnited States\t10/1/2020\t48806\t43296\tnull\t0\nUnited States\t10/2/2020\t51730\t43460\tnull\t0\nUnited States\t10/3/2020\t48386\t44373\tnull\t0\nUnited States\t10/4/2020\t36560\t44658\tnull\t0\nUnited States\t10/5/2020\t40121\t45060\tnull\t0\nUnited States\t10/6/2020\t44404\t45351\tnull\t0\nUnited States\t10/7/2020\t56838\t46692\tnull\t0\nUnited States\t10/8/2020\t56817\t47836\tnull\t0\nUnited States\t10/9/2020\t59412\t48934\tnull\t0\nUnited States\t10/10/2020\t50603\t49250\tnull\t0\nUnited States\t10/11/2020\t47896\t50870\tnull\t0\nUnited States\t10/12/2020\t45965\t51705\tnull\t0\nUnited States\t10/13/2020\t55461\t53284\tnull\t0\nUnited States\t10/14/2020\t61247\t53914\tnull\t0\nUnited States\t10/15/2020\t64205\t54969\tnull\t0\nUnited States\t10/16/2020\t70300\t56525\tnull\t0\nUnited States\t10/17/2020\t57001\t57439\tnull\t0\nUnited States\t10/18/2020\t48116\t57470\tnull\t0\nUnited States\t10/19/2020\t59068\t59342\tnull\t0\nUnited States\t10/20/2020\t63029\t60423\tnull\t0\nUnited States\t10/21/2020\t69475\t61599\tnull\t0\nUnited States\t10/22/2020\t79693\t63811\tnull\t0\nUnited States\t10/23/2020\t78848\t65032\tnull\t0\nUnited States\t10/24/2020\t76494\t67817\tnull\t0\nUnited States\t10/25/2020\t61725\t69761\tnull\t0\nUnited States\t10/26/2020\t68173\t71062\tnull\t0\nUnited States\t10/27/2020\t80012\t73488\tnull\t0\nUnited States\t10/28/2020\t87770\t76102\tnull\t0\nUnited States\t10/29/2020\t92563\t77940\tnull\t0\nUnited States\t10/30/2020\t101074\t81115\tnull\t0\nUnited States\t10/31/2020\t88275\t82798\tnull\t0\nUnited States\t11/1/2020\t76412\t84897\tnull\t67475\nUnited States\t11/2/2020\t89892\t87999\tnull\t0\nUnited States\t11/3/2020\t104085\t91438\tnull\t0\nUnited States\t11/4/2020\t118613\t95844\tnull\t0\nUnited States\t11/5/2020\t130451\t101257\tnull\t0\nUnited States\t11/6/2020\t141251\t106997\tnull\t0\nUnited States\t11/7/2020\t95664\t108052\tnull\t0\nUnited States\t11/8/2020\t110502\t112922\tnull\t0\nUnited States\t11/9/2020\t123570\t117733\tnull\t0\nUnited States\t11/10/2020\t154236\t124898\tnull\t0\nUnited States\t11/11/2020\t161959\t131090\tnull\t0\nUnited States\t11/12/2020\t167532\t136387\tnull\t0\nUnited States\t11/13/2020\t185930\t142770\tnull\t0\nUnited States\t11/14/2020\t160420\t152021\tnull\t0\nUnited States\t11/15/2020\t143009\t156665\tnull\t0\nUnited States\t11/16/2020\t149783\t160409\tnull\t0\nUnited States\t11/17/2020\t172804\t163062\tnull\t0\nUnited States\t11/18/2020\t183260\t166105\tnull\t0\nUnited States\t11/19/2020\t197541\t170392\tnull\t0\nUnited States\t11/20/2020\t200549\t172480\tnull\t0\nUnited States\t11/21/2020\t177130\t174868\tnull\t0\nUnited States\t11/22/2020\t152932\t176285\tnull\t0\nUnited States\t11/23/2020\t160045\t177751\tnull\t0\nUnited States\t11/24/2020\t181217\t178953\tnull\t0\nUnited States\t11/25/2020\t200209\t181374\tnull\t0\nUnited States\t11/26/2020\t166182\t176894\tnull\t0\nUnited States\t11/27/2020\t161709\t171346\tnull\t0\nUnited States\t11/28/2020\t138613\t165843\tnull\t0\nUnited States\t11/29/2020\t143459\t164490\tnull\t0\nUnited States\t11/30/2020\t157211\t164085\tnull\t0\nUnited States\t12/1/2020\t205148\t167504\tnull\t0\nUnited States\t12/2/2020\t225781\t171157\tnull\t0\nUnited States\t12/3/2020\t242282\t182029\tnull\t0\nUnited States\t12/4/2020\t238690\t193026\tnull\t0\nUnited States\t12/5/2020\t216999\t204224\tnull\t0\nUnited States\t12/6/2020\t178593\t209243\tnull\t0\nUnited States\t12/7/2020\t184340\t213119\tnull\t0\nUnited States\t12/8/2020\t228454\t216448\tnull\t0\nUnited States\t12/9/2020\t231380\t217248\tnull\t0\nUnited States\t12/10/2020\t226223\t214954\tnull\t0\nUnited States\t12/11/2020\t254885\t217267\tnull\t0\nUnited States\t12/12/2020\t224761\t218376\tnull\t0\nUnited States\t12/13/2020\t185761\t219400\t13676\t0\nUnited States\t12/14/2020\t189370\t220119\t17661\t0\nUnited States\t12/15/2020\t196238\t215516\t66994\t0\nUnited States\t12/16/2020\t236914\t216307\t227516\t0\nUnited States\t12/17/2020\t245568\t219071\t500899\t0\nUnited States\t12/18/2020\t241387\t217142\t917477\t0\nUnited States\t12/19/2020\t207057\t214613\t1100173\t0\nUnited States\t12/20/2020\t177225\t213394\t1205612\t0\nUnited States\t12/21/2020\t172444\t210976\t1586828\t0\nUnited States\t12/22/2020\t197624\t211174\t2034159\t0\nUnited States\t12/23/2020\t240090\t211627\t2603292\t0\nUnited States\t12/24/2020\t199387\t205030\t2798080\t0\nUnited States\t12/25/2020\t152327\t192307\t2810444\t0\nUnited States\t12/26/2020\t173118\t187459\t2949518\t0\nUnited States\t12/27/2020\t115480\t178638\t3043726\t0\nUnited States\t12/28/2020\t186499\t180646\t3625734\t0\nUnited States\t12/29/2020\t220597\t183928\t4335511\t0\nUnited States\t12/30/2020\t274801\t188887\t5164343\t0\nUnited States\t12/31/2020\t276716\t199934\t5578875\t0\nUnited States\t1/1/2021\t207508\t207817\t5641056\t0\nUnited States\t1/2/2021\t224003\t215086\t5897311\t0\nUnited States\t1/3/2021\t177138\t223894\t6031801\t0\nUnited States\t1/4/2021\t192595\t224765\t6672314\t0\nUnited States\t1/5/2021\t249327\t228869\t7483442\t0\nUnited States\t1/6/2021\t290293\t231082\t8486889\t0\nUnited States\t1/7/2021\t295870\t233819\t9630702\t0\nUnited States\t1/8/2021\t313481\t248958\t10838556\t0\nUnited States\t1/9/2021\t231677\t250054\t11337585\t0\nUnited States\t1/10/2021\t205201\t254063\t11583272\t0\nUnited States\t1/11/2021\t187820\t253381\t12631382\t0\nUnited States\t1/12/2021\t211483\t247975\t13860137\t0\nUnited States\t1/13/2021\t240478\t240858\t15159578\t0\nUnited States\t1/14/2021\t224410\t230650\t16450609\t0\nUnited States\t1/15/2021\t236740\t219687\t17690273\t0\nUnited States\t1/16/2021\t205630\t215966\t18333611\t0\nUnited States\t1/17/2021\t165182\t210249\t18632690\t0\nUnited States\t1/18/2021\t109041\t198994\t19496788\t0\nUnited States\t1/19/2021\t174803\t193754\t20820115\t584\nUnited States\t1/20/2021\t193659\t187066\t22417776\t0\nUnited States\t1/21/2021\t196251\t183043\t24031723\t0\nUnited States\t1/22/2021\t192183\t176678\t25632563\t0\nUnited States\t1/23/2021\t166846\t171137\t26530898\t0\nUnited States\t1/24/2021\t134681\t166780\t26922531\t0\nUnited States\t1/25/2021\t120466\t168412\t28262448\t0\nUnited States\t1/26/2021\t148521\t164658\t29896935\t0\nUnited States\t1/27/2021\t162186\t160162\t31793851\t0\nUnited States\t1/28/2021\t156490\t154481\t33720921\t0\nUnited States\t1/29/2021\t156344\t149362\t35592590\t0\nUnited States\t1/30/2021\t137317\t145143\t36601726\t0\nUnited States\t1/31/2021\t102376\t140528\t37057486\t0\nUnited States\t2/1/2021\t119977\t140458\t38372702\t0\nUnited States\t2/2/2021\t120550\t136462\t40025282\t0\nUnited States\t2/3/2021\t115428\t129783\t42130350\t0\nUnited States\t2/4/2021\t121851\t124834\t44436471\t0\nUnited States\t2/5/2021\t124168\t120238\t46746543\t0\nUnited States\t2/6/2021\t106733\t115869\t48031279\t0\nUnited States\t2/7/2021\t82278\t112997\t48475684\t0\nUnited States\t2/8/2021\t78129\t107019\t50020172\t0\nUnited States\t2/9/2021\t91818\t102915\t51957677\t0\nUnited States\t2/10/2021\t99014\t100570\t54219122\t0\nUnited States\t2/11/2021\t99267\t97343\t56586171\t0\nUnited States\t2/12/2021\t94867\t93158\t59127749\t0\nUnited States\t2/13/2021\t85585\t90136\t60583405\t0\nUnited States\t2/14/2021\t62210\t87270\t61163512\t0\nUnited States\t2/15/2021\t52487\t83606\t62313834\t0\nUnited States\t2/16/2021\t55414\t78406\t63907429\t0\nUnited States\t2/17/2021\t69553\t74197\t65838781\t0\nUnited States\t2/18/2021\t67882\t69714\t67661760\t0\nUnited States\t2/19/2021\t69494\t66089\t69597763\t0\nUnited States\t2/20/2021\t66287\t63332\t70890857\t0\nUnited States\t2/21/2021\t52155\t61896\t71477626\t0\nUnited States\t2/22/2021\t53727\t62073\t72912327\t0\nUnited States\t2/23/2021\t69906\t64143\t74820032\t0\nUnited States\t2/24/2021\t72968\t64631\t77307091\t0\nUnited States\t2/25/2021\t70304\t64977\t80193846\t0\nUnited States\t2/26/2021\t71359\t65243\t83252965\t0\nUnited States\t2/27/2021\t66694\t65301\t85222820\t0\nUnited States\t2/28/2021\t51996\t65279\t86060149\t0\nUnited States\t3/1/2021\t45899\t64160\t87989178\t0\nUnited States\t3/2/2021\t56846\t62295\t90391435\t0\nUnited States\t3/3/2021\t65643\t61248\t93237307\t0\nUnited States\t3/4/2021\t64521\t60422\t96375569\t0\nUnited States\t3/5/2021\t63374\t59281\t99537450\t0\nUnited States\t3/6/2021\t56026\t57757\t101557063\t0\nUnited States\t3/7/2021\t42567\t56410\t102466314\t0\nUnited States\t3/8/2021\t41008\t55712\t104579820\t0\nUnited States\t3/9/2021\t53657\t55256\t107249743\t891\nUnited States\t3/10/2021\t58679\t54261\t110322083\t0\nUnited States\t3/11/2021\t59206\t53502\t113721996\t0\nUnited States\t3/12/2021\t61280\t53203\t117100392\t0\nUnited States\t3/13/2021\t54229\t52946\t119271339\t0\nUnited States\t3/14/2021\t42639\t52956\t120241723\t0\nUnited States\t3/15/2021\t41537\t53032\t122479689\t0\nUnited States\t3/16/2021\t54692\t53180\t125320578\t0\nUnited States\t3/17/2021\t60322\t53415\t128441514\t0\nUnited States\t3/18/2021\t62314\t53859\t131802939\t0\nUnited States\t3/19/2021\t61103\t53833\t135085723\t0\nUnited States\t3/20/2021\t57895\t54357\t137212769\t0\nUnited States\t3/21/2021\t44044\t54558\t138214979\t0\nUnited States\t3/22/2021\t46764\t55304\t140526436\t0\nUnited States\t3/23/2021\t59126\t55938\t143539664\t0\nUnited States\t3/24/2021\t67354\t56942\t147042002\t0\nUnited States\t3/25/2021\t66587\t57553\t150818169\t0\nUnited States\t3/26/2021\t76259\t59718\t154586756\t0\nUnited States\t3/27/2021\t63295\t60489\t157031317\t0\nUnited States\t3/28/2021\t52864\t61749\t158223768\t0\nUnited States\t3/29/2021\t55882\t63052\t161003677\t0\nUnited States\t3/30/2021\t62647\t63555\t164532235\t0\nUnited States\t3/31/2021\t70711\t64035\t168616458\t0\nUnited States\t4/1/2021\t74084\t65106\t173034816\t0\nUnited States\t4/2/2021\t71080\t64366\t176630883\t0\nUnited States\t4/3/2021\t63586\t64407\t178905927\t0\nUnited States\t4/4/2021\t45492\t63354\t179654430\t0\nUnited States\t4/5/2021\t54460\t63151\t182693961\t0\nUnited States\t4/6/2021\t64550\t63423\t186608714\t0\nUnited States\t4/7/2021\t76572\t64260\t190901241\t0\nUnited States\t4/8/2021\t77378\t64731\t195337240\t0\nUnited States\t4/9/2021\t78918\t65850\t199583274\t72\nUnited States\t4/10/2021\t67165\t66362\t202422777\t0\nUnited States\t4/11/2021\t53463\t67500\t203803129\t0\nUnited States\t4/12/2021\t54865\t67558\t206757177\t0\nUnited States\t4/13/2021\t75889\t69178\t210175770\t0\nUnited States\t4/14/2021\t73294\t68710\t213807552\t0\nUnited States\t4/15/2021\t74309\t68271\t217469037\t0\nUnited States\t4/16/2021\t71459\t67206\t221019374\t0\nUnited States\t4/17/2021\t74295\t68224\t223349781\t0\nUnited States\t4/18/2021\t51723\t67976\t224458554\t0\nUnited States\t4/19/2021\t33810\t64968\t226989354\t0\nUnited States\t4/20/2021\t60345\t62747\t230186151\t0\nUnited States\t4/21/2021\t62882\t61260\t233605929\t0\nUnited States\t4/22/2021\t62552\t59580\t237043492\t0\nUnited States\t4/23/2021\t61951\t58222\t240284530\t0\nUnited States\t4/24/2021\t55068\t55475\t242451000\t0\nUnited States\t4/25/2021\t41041\t53949\t243430934\t0\nUnited States\t4/26/2021\t38564\t54629\t245774023\t-9005\nUnited States\t4/27/2021\t52275\t53476\t248613311\t0\nUnited States\t4/28/2021\t54895\t52335\t251646362\t0\nUnited States\t4/29/2021\t57391\t51597\t254635976\t0\nUnited States\t4/30/2021\t54496\t50532\t257485899\t0\nUnited States\t5/1/2021\t48772\t49633\t259265276\t0\nUnited States\t5/2/2021\t36051\t48920\t260126750\t0\nUnited States\t5/3/2021\t33236\t48159\t262063009\t0\nUnited States\t5/4/2021\t43586\t46918\t264538504\t0\nUnited States\t5/5/2021\t45052\t45512\t267037328\t0\nUnited States\t5/6/2021\t43636\t43547\t269511639\t0\nUnited States\t5/7/2021\t43802\t42019\t271967380\t0\nUnited States\t5/8/2021\t36813\t40310\t273480464\t0\nUnited States\t5/9/2021\t27188\t39044\t274086093\t0\nUnited States\t5/10/2021\t23862\t37705\t275652822\t0\nUnited States\t5/11/2021\t34535\t36412\t277660166\t0\nUnited States\t5/12/2021\t34590\t34918\t279637431\t0\nUnited States\t5/13/2021\t36068\t33836\t281873188\t0\nUnited States\t5/14/2021\t33874\t32418\t284280646\t0\nUnited States\t5/15/2021\t29659\t31396\t286090418\t42\nUnited States\t5/16/2021\t21156\t30534\t287006275\t0\nUnited States\t5/17/2021\t18941\t29831\t288786028\t0\nUnited States\t5/18/2021\t28494\t28968\t290817168\t0\nUnited States\t5/19/2021\t28165\t28051\t292861387\t0\nUnited States\t5/20/2021\t28273\t26937\t294838228\t0\nUnited States\t5/21/2021\t26617\t25900\t296854779\t0\nUnited States\t5/22/2021\t23238\t24983\t298277557\t0\nUnited States\t5/23/2021\t15409\t24162\t298923817\t0\nUnited States\t5/24/2021\t15657\t23693\t300213334\t0\nUnited States\t5/25/2021\t23398\t22965\t301618776\t0\nUnited States\t5/26/2021\t23970\t22366\t303018638\t0\nUnited States\t5/27/2021\t21785\t21439\t304333071\t0\nUnited States\t5/28/2021\t20720\t20596\t305629406\t0\nUnited States\t5/29/2021\t15713\t19521\t306377577\t0\nUnited States\t5/30/2021\t11804\t19006\t306753230\t0\nUnited States\t5/31/2021\t9193\t18083\t306945652\t1\nUnited States\t6/1/2021\t9689\t16124\t308163321\t0\nUnited States\t6/2/2021\t16113\t15002\t309252983\t0\nUnited States\t6/3/2021\t18572\t14543\t310469049\t0\nUnited States\t6/4/2021\t18928\t14287\t311836321\t0\nUnited States\t6/5/2021\t15543\t14263\t312882967\t0\nUnited States\t6/6/2021\t12100\t14305\t313385969\t0\nUnited States\t6/7/2021\t10122\t14438\t314422624\t0\nUnited States\t6/8/2021\t14354\t15104\t315570230\t0\nUnited States\t6/9/2021\t19398\t15573\t316707399\t464\nUnited States\t6/10/2021\t16728\t15310\t317848078\t1\nUnited States\t6/11/2021\t14522\t14681\t319050229\t0\nUnited States\t6/12/2021\t11894\t14159\t319924862\t0\nUnited States\t6/13/2021\t8587\t13657\t320307898\t0\nUnited States\t6/14/2021\t8064\t13363\t321193966\t0\nUnited States\t6/15/2021\t13212\t13200\t322145500\t0\nUnited States\t6/16/2021\t13720\t12389\t323064359\t0\nUnited States\t6/17/2021\t13575\t11939\t323931814\t0\nUnited States\t6/18/2021\t11428\t11497\t324828826\t0\nUnited States\t6/19/2021\t11702\t11469\t325390219\t0\nUnited States\t6/20/2021\t9223\t11560\t325658709\t0\nUnited States\t6/21/2021\t8430\t11612\t326200178\t0\nUnited States\t6/22/2021\t13612\t11670\t326934306\t0\nUnited States\t6/23/2021\t14571\t11791\t327647139\t0\nUnited States\t6/24/2021\t15394\t12051\t328322656\t0\nUnited States\t6/25/2021\t13550\t12354\t329062525\t0\nUnited States\t6/26/2021\t12558\t12476\t329542812\t0\nUnited States\t6/27/2021\t9331\t12492\t329802489\t58\nUnited States\t6/28/2021\t9686\t12671\t330334424\t44\nUnited States\t6/29/2021\t16129\t13031\t330939660\t122\nUnited States\t6/30/2021\t17252\t13414\t331546779\t136\nUnited States\t7/1/2021\t18695\t13885\t332116074\t122\nUnited States\t7/2/2021\t16810\t14351\t332711572\t129\nUnited States\t7/3/2021\t14905\t14686\t333055530\t111\nUnited States\t7/4/2021\t12705\t15168\t333103711\t27\nUnited States\t7/5/2021\t11481\t15425\t333485301\t34\nUnited States\t7/6/2021\t14852\t15242\t334046256\t71\nUnited States\t7/7/2021\t23165\t16087\t334590907\t203\nUnited States\t7/8/2021\t29399\t17616\t335131749\t101\nUnited States\t7/9/2021\t28706\t19316\t335733030\t686\nUnited States\t7/10/2021\t23639\t20563\t336118049\t123\nUnited States\t7/11/2021\t20251\t21641\t336326045\t83\nUnited States\t7/12/2021\t21908\t23131\t336815620\t85\nUnited States\t7/13/2021\t33760\t25832\t337316398\t156\nUnited States\t7/14/2021\t37960\t27946\t337818968\t240\nUnited States\t7/15/2021\t40225\t29492\t338330471\t263\nUnited States\t7/16/2021\t40715\t31208\t338922695\t179\nUnited States\t7/17/2021\t36074\t32984\t339305479\t71\nUnited States\t7/18/2021\t33783\t34917\t339528127\t45\nUnited States\t7/19/2021\t32601\t36445\t340063990\t301\nUnited States\t7/20/2021\t45342\t38100\t340630977\t309\nUnited States\t7/21/2021\t55438\t40596\t341196597\t301\nUnited States\t7/22/2021\t66730\t44383\t341790847\t457\nUnited States\t7/23/2021\t67096\t48152\t342472552\t533\nUnited States\t7/24/2021\t59318\t51472\t342901278\t138\nUnited States\t7/25/2021\t51848\t54053\t343140597\t44\nUnited States\t7/26/2021\t52612\t56912\t343685151\t54\nUnited States\t7/27/2021\t82581\t62231\t344023887\t424\nUnited States\t7/28/2021\t86058\t66606\t344071595\t436\n"
+    );
+
+    var data = allData
+    .map((r) => parseInt(r["7-Day Moving Avg"]))
+    .map(function (d, i) {
+        return [i, d];
+    });
+
+    var cumVaccine = allData
+    .map((r) => {
+        return r["Total Doses Administered"] === "null"
+        ? 0
+        : parseInt(r["Total Doses Administered"]);
+    })
+    .map(function (d, i) {
+        return [i, d];
+    });
+
+    var dateToIdx = {};
+    var dates = [];
+    let runSum = 0;
+    let dateToRunSum = {};
+
+    allData.forEach((r, i) => {
+    dates.push(r.Date);
+    dateToIdx[r.Date] = i;
+    dateToRunSum[r.Date] = runSum;
+    runSum += parseInt(r["7-Day Moving Avg"]);
+    });
+
+    var maxY = Math.max(...data.map((r) => r[1]));
+
+    var dataLength = data.length;
+    // var numSegments = 3;
+    // var breakpoints = _.range(-1, numSegments - 1).map((i) => [
+    //     // Math.floor(((i + 1) * dataLength) / numSegments),
+    //     // Math.floor(((i + 2) * dataLength) / numSegments)
+    //     0
+    // ]);
+
+    const breakpointDates = [
+    ["1/22/2020", "6/30/2020"],
+    ["6/30/2020", "10/15/2020"],
+    ["10/15/2020", "4/1/2021"],
+    ["4/1/2021", "7/28/2021"]
+    ];
+
+    const breakpointRunSum = breakpointDates.map((b) => [
+    dateToRunSum[b[0]],
+    dateToRunSum[b[1]]
+    ]);
+
+    const breakpoints = breakpointDates.map((b) => [
+    dateToIdx[b[0]],
+    dateToIdx[b[1]]
+    ]);
+
+    const numSegments = breakpoints.length;
+
+    d3.select("#controls")
+    .selectAll("button")
+    .data(_.range(1, numSegments + 1))
+    .enter()
+    .append("button")
+    .attr("class", (i) => "btn btn-" + i.toString())
+    .text((i) => "Wave " + i.toString() + (i === 4 ? "+" : ""))
+    .on("click", (i) => goForward(i - 1));
+
+    // set the dimensions and margins of the graph
+    var margin = { top: 20, right: 70, bottom: 30, left: 80 },
+    w = 960 - margin.left - margin.right,
+    h = 500 - margin.top - margin.bottom;
+
+    var x = d3
+    .scaleLinear()
+    .domain([0, data.length - 1])
+    .range([0, w]);
+
+    var y = d3
+    .scaleLinear()
+    .domain([0, maxY + maxY / 6])
+    .range([h, 0]);
+
+    var line = d3
+    .line()
+    .x(function (d) {
+        return x(d[0]);
+    })
+    .y(function (d) {
+        return y(d[1]);
+    });
+
+    const maxY2 = Math.max(...cumVaccine.map((r) => r[1]));
+
+    var y2 = d3
+    .scaleLinear()
+    .domain([0, maxY2 + maxY2 / 13])
+    .range([h, 0]);
+
+    var line2 = d3
+    .line()
+    .x(function (d) {
+        return x(d[0]);
+    })
+    .y(function (d) {
+        return y2(d[1]);
+    });
+
+    var svg = d3
+    .select("#chart")
+    .append("svg")
+    .attr("width", w + margin.left + margin.right)
+    .attr("height", h + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+    ];
+
+    // y axes
+    svg.append("g").attr("class", "yAxis").call(d3.axisLeft(y).ticks(10));
+    svg
+    .append("g")
+    .attr("class", "yAxis y-axis-total-doses")
+    .attr("transform", "translate(" + w + ", 0)")
+    .call(d3.axisRight(y2).ticks(10).tickFormat(d3.format(".2s")));
+
+    // time axis
+    const timeAxis = d3
+    .axisBottom(
+        d3
+        .scaleTime()
+        .domain([new Date(dates[0]), new Date(dates[data.length - 1])])
+        .range([0, w])
+    )
+    .ticks(12)
+    .tickFormat(
+        (d) =>
+        monthNames[d.getMonth()] + " " + d.getFullYear().toString().slice(2, 4)
+    );
+
+    // x axis
+    svg
+    .append("g")
+    .attr("class", "xAxis")
+    .attr("transform", "translate(0," + h + ")")
+    .call(timeAxis);
+
+    // add the Y gridlines
+    svg
+    .append("g")
+    .attr("class", "grid")
+    .call(d3.axisLeft(y).ticks(10).tickSize(-w).tickFormat(""));
+
+    // text label for the y axis
+    svg
+    .append("text")
+    .attr("transform", "rotate(-90) translate(0, 0)")
+    .attr("y", 0 - margin.left)
+    .attr("x", 0 - h / 2)
+    .attr("dy", "1em")
+    .attr("class", "axisLabel")
+    .style("text-anchor", "middle")
+    .text("New Cases");
+
+    // text label for the y2 axis
+    svg
+    .append("text")
+    .attr("transform", "rotate(-270) translate(" + 0 + ", 0)")
+    .attr("y", -w - margin.right)
+    .attr("x", h / 2)
+    .attr("dy", "1em")
+    .attr("class", "axisLabel total-doses-label")
+    .style("text-anchor", "middle")
+    .text("Total Doses (Million)");
+
+    // plot line chart for total doses administered
+    var path2 = svg
+    .append("path")
+    .attr("class", "total-doses")
+    .attr("d", line2(cumVaccine[0]))
+    .datum(cumVaccine.slice(0, 1))
+    .attr("d", function (d) {
+        return line2(d);
+    });
+
+    // plot line chart
+    var path = svg
+    .append("path")
+    .attr("class", "line")
+    .attr("d", line(data[0]))
+    .datum(data.slice(0, 1))
+    .attr("d", function (d) {
+        return line(d);
+    });
+
+    // runSum counter
+    var runSumText = svg
+    .append("text")
+    .attr("class", "run-sum")
+    .attr("transform", "translate(0,-7)")
+    .text("Total Cases: 0")
+    .property("_current", () => 0);
+
+    const sceneDur = 2000;
+
+    // Annotations
+
+    const type = d3.annotationLabel;
+
+    const annoDates = [
+    "1/22/2020",
+    "5/28/2020",
+    "7/16/2020",
+    "10/2/2020",
+    "12/14/2020",
+    "2/22/2021",
+    "3/10/2021",
+    "6/20/2021"
+    ];
+
+    const annoLabels = [
+    "First case of COVID-19 in US confirmed (Washington state)",
+    "US death toll passes 100,000 deaths",
+    "New record of daily COVID-19 cases (75,600)",
+    "President Trump and First Lady test positive for COVID-19",
+    "First COVID-19 vaccine administered (Pfizer)",
+    "US death toll passes 500,000 deaths",
+    "10% of US population fully vaccinated",
+    "Delta variant accounts for majoriy of new cases"
+    ];
+    const annoDxDy = [
+    [82, -35],
+    [0, -80],
+    [0, -80],
+    [-25, -200],
+    [-20, -40],
+    [-85, 15],
+    [20, -100],
+    [-40, -70]
+    ];
+
+    const findSceneFromDate = (d) => {
+    for (let k = 0; k < breakpointDates.length; k++) {
+        const myD = Date.parse(d);
+        if (
+        Date.parse(breakpointDates[k][0]) <= myD &&
+        myD <= Date.parse(breakpointDates[k][1])
+        ) {
+        return k;
+        }
+    }
+    return 0;
+    };
+
+    const annoScenes = annoDates.map((d) => findSceneFromDate(d));
+
+    // console.log(annoScenes);
+
+    // const annoScenes = [0, 0, 0, 1, 1, 2, 2, 3];
+
+    const annotations = [];
+    let sceneCt = 0;
+    let prevScene = 0;
+    for (
+    let j = 0;
+    j <
+    Math.min(
+        annoDates.length,
+        annoDxDy.length,
+        annoLabels.length,
+        annoScenes.length
+    );
+    j++
+    ) {
+    if (annoScenes[j] != prevScene) {
+        sceneCt = 0;
+    }
+    annotations.push({
+        note: {
+        label: annoLabels[j],
+        bgPadding: 0,
+        title: annoDates[j],
+        wrap: 150
+        },
+        //can use x, y directly instead of data
+        data: { scene: annoScenes[j], date: annoDates[j] },
+        x: x(dateToIdx[annoDates[j]]),
+        y: y(data[dateToIdx[annoDates[j]]][1]),
+        className:
+        "anno anno-" + sceneCt.toString() + " scene-" + annoScenes[j].toString(),
+        dy: annoDxDy[j][1],
+        dx: annoDxDy[j][0]
+    });
+    sceneCt += 1;
+    prevScene = annoScenes[j];
+    }
+
+    const makeAnnotations = d3
+    .annotation()
+    // .editMode(true)
+    //also can set and override in the note.padding property
+    //of the annotation object
+    .notePadding(0)
+    .type(type)
+    .annotations(annotations);
+
+    svg.append("g").attr("class", "annotation-group").call(makeAnnotations);
+
+    var busy = false;
+
+    function forward() {
+    var interpolate = d3
+        .quantile()
+        .domain([0, 1])
+        .range(d3.range(1, data.length + 1));
+    return function (t) {
+        return line(data.slice(0, interpolate(t)));
+    };
+    }
+
+    function forwardFromPoint(data, start, end, makeLine) {
+    return function (d) {
+        var interpolate = d3
+        .scaleQuantile()
+        .domain([0, 1])
+        .range(d3.range(start, end + 1));
+        return function (t) {
+        return makeLine(data.slice(0, interpolate(t)));
+        };
+    };
+    }
+
+    function backwardToPoint(data) {
+    return function (d, i, a) {
+        var interpolate = d3
+        .scaleQuantile()
+        .domain([0, 1])
+        .range(d3.range(0, dataLength - d.length + 1));
+        return function (t) {
+        return line(data.slice(0, dataLength - interpolate(t)));
+        };
+    };
+    }
+
+    function goForward(i) {
+    if (busy) {
+        return;
+    }
+
+    // start Total Cases counter
+    const startCt = breakpointRunSum[i][0];
+    const endCt = breakpointRunSum[i][1];
+    const runSum = d3.select(".run-sum");
+    runSum.property("_current", startCt);
+
+    runSum
+        .datum(endCt)
+        .transition()
+        .duration(sceneDur)
+        .textTween(function (d) {
+        const i = d3.interpolate(this._current, d);
+        return function (t) {
+            this._current = i(t);
+            console.log(i(t));
+            return (
+            "Total Cases: " +
+            Math.round(i(t))
+                .toString()
+                .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            );
+        };
+        });
+
+    // style selected scene and non-selected scene
+    _.range(0, i + 1).forEach((k) => {
+        d3.select(".btn-" + (k + 1).toString()).classed("selected", true);
+    });
+    _.range(i + 2, numSegments + 1).forEach((k) => {
+        d3.select(".btn-" + k.toString()).classed("selected", false);
+    });
+
+    busy = true;
+    setTimeout(() => {
+        busy = false;
+    }, sceneDur);
+
+    const newCases = d3
+        .select("#chart path.line")
+        .attr("class", "line")
+        .transition()
+        .duration(sceneDur)
+        .attrTween(
+        "d",
+        forwardFromPoint(data, breakpoints[i][0], breakpoints[i][1], line)
+        );
+
+    const totalDoses = d3
+        .select("#chart path.total-doses")
+        .attr("class", "total-doses")
+        .transition()
+        .duration(sceneDur)
+        .attrTween(
+        "d",
+        forwardFromPoint(cumVaccine, breakpoints[i][0], breakpoints[i][1], line2)
+        );
+
+    const speed = (breakpoints[i][1] - breakpoints[i][0]) / sceneDur;
+    const annos = d3
+        .selectAll(".anno")
+        .style("opacity", 0)
+        .style("transition", "opacity 0.2s");
+
+    // show all annos scenes before
+    for (let k = 0; k < i; k++) {
+        const a = d3.selectAll(".scene-" + k.toString()).style("opacity", 1);
+    }
+
+    // show current scene annos in smooth transition
+    const annosToShow = annotations.filter((a) => a.data.scene === i);
+
+    annosToShow.forEach((a, idx) => {
+        setTimeout(function () {
+        d3.select(
+            ".anno" + ".anno-" + idx.toString() + ".scene-" + i.toString()
+        ).style("opacity", 1);
+        }, dateToIdx[a.data.date] / speed -
+        (i > 0 ? breakpoints[i - 1][1] / speed : 0));
+    });
+    }
+
+    function goBackward() {
+    d3.select("#chart path")
+        .transition()
+        .duration(sceneDur)
+        .attrTween("d", backwardToPoint(data));
+    }
+
+    // click wave 1 to start
+    d3.select(".btn-1").dispatch("click");
+
+</script>
+
+</body>
+</html>
